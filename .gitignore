@@ -404,3 +404,6 @@ StartupErrors/
 
 # Template configuration (local only)
 .template.config/
+
+# GitHub folder (Copilot instructions, etc. not meant for template)
+.github/

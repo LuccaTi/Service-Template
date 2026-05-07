@@ -1,4 +1,4 @@
-﻿using ServiceTemplate.Business.Interfaces;
+﻿using ServiceTemplate.Application.Interfaces;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace ServiceTemplate.Business.Orchestrators
+namespace ServiceTemplate.Application.Orchestrators
 {
     public class ServiceOrchestrator : IServiceOrchestrator
     {

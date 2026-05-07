@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ServiceTemplate.Business.Interfaces
+namespace ServiceTemplate.Application.Interfaces
 {
     public interface IServiceEngine
     {

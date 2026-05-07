@@ -2,26 +2,25 @@
 using Serilog;
 using System.Reflection.Metadata.Ecma335;
 using System.Timers;
-using ServiceTemplate.Business.Interfaces;
+using ServiceTemplate.Application.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ServiceTemplate.Application;
 
 
-namespace ServiceTemplate.Business
+namespace ServiceTemplate.Host
 {
     public class ServiceLifeCycleManager : BackgroundService
     {
         private const string _className = "ServiceLifeCycleManager";
         private List<Task> _tasks = new();
         private readonly ILogger<ServiceLifeCycleManager> _logger;
-        private readonly IOptions<ServiceSettings> _settings;
         private readonly IEnumerable<IServiceOrchestrator> _orchestrators;
 
-        public ServiceLifeCycleManager(ILogger<ServiceLifeCycleManager> logger, IOptions<ServiceSettings> settings, IEnumerable<IServiceOrchestrator> orchestrators)
+        public ServiceLifeCycleManager(ILogger<ServiceLifeCycleManager> logger, IEnumerable<IServiceOrchestrator> orchestrators)
         {
             _logger = logger;
-            _settings = settings;
             _orchestrators = orchestrators;
         }
 

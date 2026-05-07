@@ -1,7 +1,7 @@
-﻿using ServiceTemplate.Business;
-using ServiceTemplate.Business.Engines;
-using ServiceTemplate.Business.Interfaces;
-using ServiceTemplate.Business.Orchestrators;
+﻿using ServiceTemplate.Application;
+using ServiceTemplate.Application.Engines;
+using ServiceTemplate.Application.Interfaces;
+using ServiceTemplate.Application.Orchestrators;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using Serilog;
 using System;
 using System.IO;
+using ServiceTemplate.Infrastructure;
 
 
 namespace ServiceTemplate.Host
@@ -42,9 +43,11 @@ namespace ServiceTemplate.Host
                     .ConfigureServices((hostContext, services) =>
                     {
                         services.Configure<ServiceSettings>(hostContext.Configuration.GetSection("ServiceSettings"));
+
+                        services.AddApplication();
+                        services.AddInfrastructure();
+
                         services.AddHostedService<ServiceLifeCycleManager>();
-                        services.AddSingleton<IServiceOrchestrator, ServiceOrchestrator>();
-                        services.AddSingleton<IServiceEngine, ServiceEngine>();
                     })
                     .Build();
 

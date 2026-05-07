@@ -1,77 +1,57 @@
-# Service Template — Serviço Windows em .NET 8
+# Service Template — Serviço Windows em .NET 8 com Clean Architecture
 
 ## Visão geral
-Este repositório contém um template de Serviço Windows construído com .NET 8 e o Host genérico para serviços do .NET. O projeto já vem estruturado com camadas separadas (Host → Business → Library), configuração centralizada, logging com Serilog e execução baseada em timer.
+Este repositório contém um template de Serviço (Worker) construído com .NET 8. O projeto foi estruturado para seguir os princípios de **Clean Architecture**, dividindo suas responsabilidades em camadas bem definidas (Host, Application, Domain, Infrastructure), configuração centralizada e logging estruturado.
 
-O propósito é criar um "esqueleto" que sirva como base para a criação de serviços Windows seguindo um padrão de implementação, configuração e logging.
+O propósito é criar um "esqueleto" escalável e limpo que sirva como base para a criação de novos serviços seguindo as melhores práticas modernas do ecossistema .NET.
 
-A execução do trabalho é feita de forma assíncrona para maximizar a eficiência do uso dos recursos computacionais.
-
-Funcionalidade de exemplo disponível:
-- Timer configurável que executa threads de trabalho em intervalos definidos via `appsettings.json`.
+A execução do trabalho é feita de forma assíncrona para maximizar a eficiência do uso dos recursos computacionais, ideal para processamento em background.
 
 ## Tecnologias e bibliotecas essenciais
-- .NET 8 (Console Application)
-- Microsoft.Extensions.Hosting (hospedagem e instalação de serviços Windows)
-- Serilog (logging para console e arquivo)
-- Microsoft.Extensions.Configuration (leitura de `appsettings.json`)
-- Microsoft.Extensions.DependencyInjection
+- .NET 8 (Worker Service / Console Application)
+- Microsoft.Extensions.Hosting (hospedagem, injeção de dependência e ciclo de vida)
+- Serilog (logging estruturado)
+- Moq e xUnit (para testes de unidade)
 
-## Estrutura do projeto
-- `ServiceTemplate.Host/Program.cs`: ponto de entrada; configura TopShelf, carrega configurações e inicializa o serviço.
-- `ServiceTemplate.Business/ServiceLifeCycleManager.cs`: classe principal que controla o ciclo de vida do serviço.
-- `ServiceTemplate.Business/Orchestrators/ServiceOrchestrator.cs`: classe responsável por controlar o fluxo do trabalho.
-- `ServiceTemplate.Business/Engines/ServiceEngine.cs`: classe que vai obter os dados e aplicar a lógica de negócio.
-- `ServiceTemplate.Library/Models/`: camada para modelos de dados (placeholder para futura implementação).
-- `ServiceTemplate.Host/appsettings.json`: configurações da aplicação (intervalo de execução, diretório de logs, níveis de log).
+## Estrutura do Projeto (Clean Architecture)
+O código agora está unificado sob a pasta `src/` e `tests/`, garantindo separação arquitetural e escalabilidade:
 
-## Arquitetura e padrões de projeto
-- Hospedagem e ciclo de vida
-    - Usa o host genérico de serviços da Microsoft para facilitar instalação, execução e gerenciamento como serviço Windows.
-    - Nome do serviço: `ServiceTemplate`.
-    - Callbacks de `ExecuteAsync` e `StopAsync` para controle do ciclo de vida.
+- **`src/ServiceTemplate.Domain/`**: Camada central isolada. Contém entidades, interfaces de repositório e regras de negócio essenciais.
+- **`src/ServiceTemplate.Application/`**: Orquestração de casos de uso operacionais. 
+  - `Orchestrators/`: Define o fluxo principal do trabalhador.
+  - `Engines/`: Aplica as regras sistêmicas.
+  - *Extensões de Injeção de Dependências (*`DependencyInjection.cs`*)*.
+- **`src/ServiceTemplate.Infrastructure/`**: Responsável pelas integrações externas (banco de dados, APIs, mensageria, etc).
+- **`src/ServiceTemplate.Host/`**: Ponto de entrada (application root). Configura o `.NET Generic Host`, carregamento do `appsettings.json`, Serilog e faz a ponte (`ServiceLifeCycleManager`) para o orquestrador.
+- **`tests/ServiceTemplate.Application.Tests/`**: Testes automatizados das regras e orquestração usando de mocks.
 
-- Separação de camadas
-    - **ServiceTemplate.Host**: responsável apenas pela hospedagem e bootstrap.
-    - **ServiceTemplate.Business**: contém toda a lógica de negócio.
-    - **ServiceTemplate.Library**: camada para modelos compartilhados.
-
-- Logging (Serilog)
-    - Logs em console e arquivo rolling diário em `logs/system_log_.txt`, a pasta `logs` fica no diretório base da aplicação.
-    - Em falhas na inicialização, um arquivo é escrito na pasta logs usando um bootstrap logger para garantir rastreabilidade mesmo antes do logger principal estar ativo.
-
-- Tratamento de erros
-    - Exceções no startup são capturadas e registradas em arquivo dedicado antes de encerrar a aplicação.
-    - Exceções durante a execução que não forem tratadas são registradas nos logs.
-    - O tratamento de erros do serviço impede que seja encerrado diante de exceções.
+## Arquitetura e Padrões de Projeto
+- **Host e Ciclo de Vida**: Utiliza o `.NET Generic Host` (`Microsoft.Extensions.Hosting`), o padrão definitivo e robusto da Microsoft, facilitando a execução via Console, Container ou Serviço do Windows.
+- **Injeção de Dependência**: A configuração dos serviços foi segregada. Cada camada possui seu `DependencyInjection.cs`, mantendo o `Program.cs` limpo.
+- **Logging (Serilog)**: Logs configurados na raiz do host, garantindo output no Console e arquivo `rolling`, preservando o registro desde o bootstrap.
 
 ## Configuração
-Arquivo: `ServiceTemplate.Host/appsettings.json`
+Arquivo: `src/ServiceTemplate.Host/appsettings.json`
 
 Seções disponíveis:
 - **`ServiceSettings`**:
-  - `Interval` (int): intervalo em segundos entre execuções do timer (padrão: 10 segundos).
+  - `Interval` (int): intervalo em segundos entre execuções do timer.
 
-- **`Serilog`**:
-  - `MinimumLevel` (string): nível mínimo de log ("Debug", "Information", "Warning", "Error").
-  - `WriteTo` (string): determina que o log também é escrito no console.
+## Uso e Instalação (Serviço Windows)
+Este worker pode rodar em containers, no console ou como Serviço Windows.
+Para rodar como serviço Windows, compile a solução na configuração Release e registre via cmd:
 
+1. Compile: `dotnet build -c Release`
+2. Localize o executável em: `src/ServiceTemplate.Host/bin/Release/net8.0/win-x64/ServiceTemplate.Host.exe` *(exemplo)*
+3. Crie o Serviço via SC:
+   ```cmd
+   sc.exe create "ServiceName" binPath="C:\caminho\completo\ServiceTemplate.Host.exe" DisplayName="Meu Novo Worker"
+   ```
+4. Iniciar/Parar:
+   ```cmd
+   sc.exe start "ServiceName"
+   sc.exe stop "ServiceName"
+   sc.exe delete "ServiceName"
+   ```
 
-## Uso e Instalação
-O código precisa ser compilado tanto em versão Debug quanto versão Release para gerar o executável, em seguida pode rodar como console ao usar o .exe no terminal (cmd, por exemplo).
-
-Para instalar é preciso seguir o passo a passo abaixo:
-
-- No Visual Studio, compile a solução na configuração Release.
-
-- Localize o caminho completo do executável gerado. Exemplo: C:\seus\projetos\solução\projeto com Program.cs\bin\Release\net8.0\service.exe.
-
-- Abra o cmd ou o power shell como administrador e execute o comando abaixo para criar o serviço no windows: sc.exe create "ServiceName" binPath="C:\caminho\completo\para\seu\service.exe" DisplayName="Service Display Name"
-
-- Use o comando abaixo para adicionar uma descrição: sc.exe description "ServiceName" "Descrição o serviço.".
-
-- Inicie o serviço via linha de comando: sc.exe start "ServiceName"
-
-- Para desinstalar, primeiro pare o serviço: sc.exe stop "ServiceName"
-
-- Em seguida desinstale: sc.exe delete "ServiceName"
+*(Para rodar durante o desenvolvimento, use apenas `dotnet run --project src/ServiceTemplate.Host`).*
