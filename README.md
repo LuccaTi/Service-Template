@@ -41,13 +41,17 @@ Seções disponíveis:
 Este worker pode rodar em containers, no console ou como Serviço Windows.
 Para rodar como serviço Windows, compile a solução na configuração Release e registre via cmd:
 
-1. Compile: `dotnet build -c Release`
-2. Localize o executável em: `src/ServiceTemplate.Host/bin/Release/net8.0/win-x64/ServiceTemplate.Host.exe` *(exemplo)*
-3. Crie o Serviço via SC:
+1. Abra o cmd **como Administrador**, navegue até a pasta raiz da solução e compile:
+   `dotnet build -c Release` (ou utilize `dotnet publish -c Release -o C:\Worker` para gerar uma pasta final de deploy independente).
+2. Localize o caminho completo do executável gerado:
+   `.../src/ServiceTemplate.Host/bin/Release/net8.0/ServiceTemplate.Host.exe` *(exemplo)*
+3. Crie o Serviço via utilitário **SC (Service Control)**:
+   Utilize o comando abaixo em qualquer diretório. O parâmetro `binPath` deve conter o caminho exato do executável levantado no passo anterior.
    ```cmd
    sc.exe create "ServiceName" binPath="C:\caminho\completo\ServiceTemplate.Host.exe" DisplayName="Meu Novo Worker"
    ```
-4. Iniciar/Parar:
+4. Iniciar, Parar e Excluir:
+   Estes comandos também podem ser executados de qualquer local. O que importa é que o nome do serviço ("ServiceName") seja o mesmo.
    ```cmd
    sc.exe start "ServiceName"
    sc.exe stop "ServiceName"
